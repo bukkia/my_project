@@ -1,21 +1,36 @@
-Create a Dockerfile: In your project directory, create a Dockerfile to define your application's environment.
-# Use an official Python runtime as a parent image
-FROM python:3.8-slim
+# Base image: Official Jenkins LTS
+FROM jenkins/jenkins:lts
 
-# Set the working directory in the container
+# Switch to root to install tools
+USER root
+
+# Install Docker, Python3, pip and venv
+RUN apt-get update && \
+    apt-get install -y docker.io python3 python3-pip python3-venv && \
+    usermod -aG docker jenkins && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create app directory and working dir
+RUN mkdir -p /app
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
+# Create virtual environment and install dependencies inside it
+COPY requirements.txt /app/
+RUN python3 -m venv /app/venv && \
+    /app/venv/bin/pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of your project files
 COPY . /app
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Set virtual environment path in PATH
+ENV PATH="/app/venv/bin:$PATH"
 
-# Make port 80 available to the world outside this container
-EXPOSE 80
+# Switch back to Jenkins user
+USER root
 
-# Define environment variable
-ENV NAME World
+# Base image: Official Jenkins LTS
+FROM jenkins/jenkins:lts
 
-# Run app.py when the container launches
-CMD ["python", "app.py"]
+# Switch to root to install Docker CLI
+USER root

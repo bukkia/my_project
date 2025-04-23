@@ -23,6 +23,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    // This makes the KUBECONFIG environment variable point to the secret file
                     sh 'kubectl apply -f kubernetes-manifest.yaml'
                 }
             }
